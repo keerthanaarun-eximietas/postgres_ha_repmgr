@@ -1,0 +1,16 @@
+.git
+.gitignore
+
+# Environment files and secrets
+.env
+.env.*
+config/*.env
+.pgpass
+*.pgpass
+.ssh/
+*.key
+*.pem
+
+# Logs and documentation
+*.log
+docs/

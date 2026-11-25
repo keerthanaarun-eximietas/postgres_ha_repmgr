@@ -1,0 +1,20 @@
+# Environment files and secrets
+.env
+.env.*
+config/*.env
+!config/*.env.example
+
+# PostgreSQL credentials and SSH keys
+.pgpass
+*.pgpass
+.ssh/
+*.key
+*.pem
+
+# Logs and runtime files
+*.log
+*.pid
+
+# Local database data
+pgdata/
+postgres-data/

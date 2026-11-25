@@ -1,0 +1,84 @@
+services:
+  postgres-server2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
+    image: postgres-repmgr:17
+    container_name: postgres-ha-2
+    restart: unless-stopped
+
+    env_file:
+      - config/server2.env
+
+    ports:
+      - "5543:5432"
+
+    command:
+      - postgres
+      - -c
+      - listen_addresses=*
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - wal_log_hints=on
+      - -c
+      - shared_preload_libraries=repmgr
+
+    volumes:
+      - postgres_server2_data:/var/lib/postgresql/data
+      - ./config/server2-repmgr.conf:/etc/repmgr/repmgr.conf:ro
+
+    networks:
+      - repmgr_network
+
+    shm_size: 256mb
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  repmgrd-server2:
+    image: postgres-repmgr:17
+    container_name: repmgrd-server2
+    user: "999:999"
+    restart: unless-stopped
+
+    depends_on:
+      postgres-server2:
+        condition: service_healthy
+
+    pid: "service:postgres-server2"
+
+    environment:
+      PGPASSFILE: /var/lib/postgresql/data/.pgpass
+
+    command:
+      - repmgrd
+      - -f
+      - /etc/repmgr/repmgr.conf
+      - --daemonize=false
+      - --no-pid-file
+
+    volumes:
+      - postgres_server2_data:/var/lib/postgresql/data
+      - ./config/server2-repmgr.conf:/etc/repmgr/repmgr.conf:ro
+
+    networks:
+      - repmgr_network
+
+volumes:
+  postgres_server2_data:
+    name: postgres_server2_data
+
+networks:
+  repmgr_network:
+    name: postgres_repmgr_network
+    driver: bridge
